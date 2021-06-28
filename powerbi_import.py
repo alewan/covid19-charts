@@ -19,6 +19,7 @@ details_df.set_index('date', inplace=True)
 # Get detailed vaccination data and reformat data
 data = requests.get('https://api.covid19tracker.ca/vaccines/age-groups/province/ON').json()['data']
 df = pandas.DataFrame()
+df_list = []  # use a list to temporarily hold the values and improve efficiency over continuous df.appends
 for e in data:
     x = pandas.Series(dtype=float)
     x.name = e['date']
@@ -28,12 +29,14 @@ for e in data:
         x[group + '_adults'] = 100 * (s['all_ages'] - s['0-17']) / on_age_groups['adults']
         for k, v in s.items():
             x[group + '_' + k] = 100 * v / on_age_groups[k]
-    df = df.append(x)
+    df_list.append(x)
+df = df.append(df_list)
+del df_list
 
 # Merge objects
 df = df.join(details_df)
 
-# PowerBI can't understand indices and needs it as an explicit column, delete extra variables
+# PowerBI can't understand indices and needs it as an explicit column, also better for PowerBI to delete extra variables
 df['Date'] = df.index.to_list()
 del d
 del details_df
